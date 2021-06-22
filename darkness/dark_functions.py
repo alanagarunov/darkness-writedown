@@ -58,6 +58,15 @@ def create_card(deck_name, card_front, card_back):
     conn.commit()
     conn.close()
 
+def get_cards(name):
+    conn = sqlite3.connect(name+'.db')
+    cursor = conn.cursor()
+    sql = '''SELECT * from ''' + name + ''' '''
+    result = cursor.execute(sql).fetchall()
+    conn.commit()
+    conn.close()
+    return result
+
 def update_card(deck_name, card, correctness):
     if correctness is True:
         try:
@@ -87,6 +96,19 @@ def update_card(deck_name, card, correctness):
             conn.close()
         except sqlite3.Error as error:
             print("There was a failure. Error: ", error)
+
+def delete_card(self, deck_name, card):
+    tempdeck = get_cards(deck_name)
+    card = card.split(" ")
+    print(card)
+    conn = sqlite3.connect(deck_name+'.db')
+    cursor = conn.cursor()
+    sql = '''DELETE FROM ''' + deck_name + ''' WHERE CARD_ID = ''' + card[1] + ''' '''
+    cursor.execute(sql)
+    print("Deleted card")
+    conn.commit()
+    conn.close()
+    self.list_button.invoke()
 
 def determine_review(deck_name):
     review_deck = []

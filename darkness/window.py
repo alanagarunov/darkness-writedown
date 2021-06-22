@@ -10,6 +10,7 @@ class Application(tk.Frame):
         self.load_display_decks()
         tk.Button(self, text="Create Card", command=self.create_card_button_window).grid(column=2, row=0)
         tk.Button(self, text="Create Deck", command=self.create_deck_button_window).grid(column=2, row=1)
+        tk.Button(self, text="Find/Edit/Delete Cards", command=self.find_window).grid(column=2, row=2)
         
 
     def create_widgets(self):
@@ -35,10 +36,12 @@ class Application(tk.Frame):
             labels.append(tk.Label(self, text=i+"\t"+str(num)+"\t"+str(len(num1)*2)))
             # label.grid(column=0)
             # label.bind("<Button-1>", lambda e: self.review_window(i))
-        
+
         for x in range(0, len(labels)):
             labels[x].grid(column=0)
-            labels[x].bind("<Button-1>", lambda e: self.review_window(decks[x]))
+            labels[x].bind("<Button-1>", lambda event, bound_x=x: self.review_window(decks[bound_x]))
+
+
 
     def create_card_button_window(self):
         #you dont need to put self on literally everything but if you dont that label wont work.
@@ -101,6 +104,45 @@ class Application(tk.Frame):
             self.ans.bind('<Return>', lambda x: self.not_or_correct(i, back_front))
             self.ans.wait_variable(self.var)
 
+    def find_window(self):
+        self.findwindow = tk.Toplevel(self)
+        self.findwindow.geometry("400x500")
+        self.clicked = tk.StringVar(self.findwindow)
+        self.clicked.set("Select a Deck")
+        self.dropdown = tk.OptionMenu(self.findwindow, self.clicked, *dark_fns.get_list_of_decks())
+        self.dropdown.pack(side="top")
+
+        self.clickonce = 0
+        self.labels = []
+
+        self.list_button = tk.Button(self.findwindow, text="List", command=lambda: self.find_window_populate(self.clicked.get(), self.clickonce, self.labels))
+        self.list_button.pack(side="left")
+
+    def find_window_populate(self, name, clickonce, labels):
+        tempdeck = dark_fns.get_cards(name)
+        if self.clickonce <= 0:
+            for x in tempdeck:
+                self.labels.append(tk.Label(self.findwindow, text=x))
+
+            for b in range(0, len(labels)):
+                labels[b].bind("<Button-3>", lambda event, bound_b=b: dark_fns.delete_card(self, name, labels[bound_b].cget("text")))
+
+            self.clickonce = clickonce + 1
+        else:
+            for a in range(len(labels)):
+                self.labels[a].config(text="")
+            for y,z in zip(tempdeck, range(len(labels))):
+                self.labels[z].config(text=y)
+
+            for c in range(0, len(labels)):  
+                labels[c].bind("<Button-3>", lambda event, bound_c=c: dark_fns.delete_card(self, name, labels[bound_c].cget("text")))
+                #self.labels = list(map(lambda a: labels.config(text=y), range(0, len(labels)))) 
+        
+        for i in range(0, len(labels)):
+            self.labels[i].pack(side="top")
+        
+        #minor problem, when you re-list a deck, it only shows as many cards as the previous.
+
     def correct_or_not(self, i, review_deck):
         #print(i)
         if self.ans.get() == i[3]:
@@ -146,10 +188,10 @@ class Application(tk.Frame):
 #TODO: DONE[make it populate a list of decks], DONE[add deck] and DONE[card button], make it look not like crap.
 #TODO: check review then [DONE]make the reviews
 #TODO: setting options: back to front review option and manual interval setup
-#TODO: find/edit/delete cards
+#TODO: [DONE]find/edit/[DONE]delete cards
 
 
 #ISSUES:
 #[RESOLVED]review_deck in correct_or functions becomes complete garbage and not letting the index function work
 #[RESOLVED]the entry and label entries wont delete and remake themselves
-#the deck_name labels all open the same deck which is the last created deck. 
+#[RESOLVED]the deck_name labels all open the same deck which is the last created deck. 
