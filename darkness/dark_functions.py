@@ -97,7 +97,7 @@ def update_card(deck_name, card, correctness):
         except sqlite3.Error as error:
             print("There was a failure. Error: ", error)
 
-def delete_card(self, deck_name, card):
+def delete_card(deck_name, card):
     tempdeck = get_cards(deck_name)
     card = card.split(" ")
     print(card)
@@ -108,7 +108,19 @@ def delete_card(self, deck_name, card):
     print("Deleted card")
     conn.commit()
     conn.close()
-    self.list_button.invoke()
+    #self.list_button.invoke()
+
+def update_card_contents(deck_name, card, new_frontside, new_backside):
+    tempdeck = get_cards(deck_name)
+    card = card.split(" ")
+    print(card)
+    conn = sqlite3.connect(deck_name+'.db')
+    cursor = conn.cursor()
+    sql = '''UPDATE ''' + deck_name + ''' SET CARD_FRONT = \'''' + str(new_frontside) + '''\', CARD_BACK = \'''' + str(new_backside)+ '''\' WHERE CARD_ID = \'''' + str(card[1]) + '''\''''
+    print(str(card[1]) + "ID Card Updated")
+    cursor.execute(sql)
+    conn.commit()
+    conn.close()
 
 def determine_review(deck_name):
     review_deck = []

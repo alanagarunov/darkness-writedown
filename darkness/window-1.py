@@ -4,10 +4,15 @@ import darkness.dark_functions as dark_fns
 class Application(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
+        self.canvas = tk.Canvas(self, borderwidth=0, background="#ffffff")
         self.master = master
         self.pack()
         #self.create_widgets()
 
+        self.scrollbar = tk.Scrollbar(self)
+        self.scrollbar.grid(column=3, row=0, sticky="ns", in_=self)
+        self.scrollbar.config(orient="vertical", command = self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
 
         self.load_display_decks()
         tk.Button(self, text="Create Card", command=self.create_card_button_window).grid(column=2, row=0)
@@ -29,25 +34,26 @@ class Application(tk.Frame):
         print("Hello World")
 
     def load_display_decks(self):
-        testframe = tk.Frame(self)
-        listbox = tk.Listbox(testframe)
-        scrollbar = tk.Scrollbar(testframe, orient="vertical")
+        # listbox = tk.Listbox(self)
+        # listbox.grid(column=0)
 
         decks = dark_fns.get_list_of_decks()
         tk.Label(self, text="List of All Decks:\tTotal Items\tFor Review").grid(column=0)
-
+        labels = []
         for i in decks:
             num = dark_fns.get_card_id(i)
             num1 = dark_fns.determine_review(i)
-            listbox.insert(tk.END, i + "    " + str(num) + "    " + str(len(num1)*2))
+            labels.append(tk.Label(self, text=i+"\t"+str(num)+"\t"+str(len(num1)*2)))
+            # label.grid(column=0)
+            # label.bind("<Button-1>", lambda e: self.review_window(i))
 
-        listbox.bind("<Double-1>", self.review_window)
-        listbox.pack(side="left")
-        
-        listbox.config(yscrollcommand = scrollbar.set)
-        scrollbar.config(command = listbox.yview)
-        scrollbar.pack(side="right", fill="y")
-        testframe.grid(column=0)
+        for x in range(0, len(labels)):
+            labels[x].grid(column=0)
+            #listbox.insert(tk.END, labels[x].cget("text"))
+            labels[x].bind("<Button-1>", lambda event, bound_x=x: self.review_window(decks[bound_x]))
+            #listbox.bind("<Double-1>", lambda event, bound_x=x: self.review_window(decks[bound_x]))
+
+        #listbox.config(yscrollcommand = scrollbar.set)
 
 
     def create_card_button_window(self):
@@ -80,14 +86,7 @@ class Application(tk.Frame):
         self.add_button = tk.Button(self.deckcreate, text="Add", command=lambda: self.create_deck_button_add(self.name.get()))
         self.add_button.pack(side="top")
 
-    def review_window(self, event):
-        widget = event.widget
-        cs = widget.curselection()
-        name = ""
-        decks = dark_fns.get_list_of_decks()
-        for i in cs:
-            name = decks[i]
-
+    def review_window(self, name):
         self.reviewwindow = tk.Toplevel(self)
         self.reviewwindow.geometry("350x50")
         review_deck = dark_fns.determine_review(name)
@@ -120,7 +119,7 @@ class Application(tk.Frame):
 
     def find_window(self):
         self.findwindow = tk.Toplevel(self)
-        self.findwindow.geometry("400x200")
+        self.findwindow.geometry("400x500")
         self.clicked = tk.StringVar(self.findwindow)
         self.clicked.set("Select a Deck")
         self.dropdown = tk.OptionMenu(self.findwindow, self.clicked, *dark_fns.get_list_of_decks())
@@ -135,44 +134,27 @@ class Application(tk.Frame):
     def find_window_populate(self, name, clickonce, labels):
         tempdeck = dark_fns.get_cards(name)
         if self.clickonce <= 0:
-            testframe = tk.Frame(self.findwindow)
-            self.listbox = tk.Listbox(testframe)
-            #self.listbox.config(width=250, height=0)
-            scrollbar = tk.Scrollbar(testframe, orient="vertical")
-
             for x in tempdeck:
-                self.listbox.insert(tk.END, x)
                 self.labels.append(tk.Label(self.findwindow, text=x))
 
-            a = 0
-            self.listbox.bind("<Double-1>", lambda event, arg=a: self.find_window_populate_delete(event, name, labels))
-            self.listbox.pack(side="left")
-            
-            self.listbox.config(yscrollcommand = scrollbar.set)
-            scrollbar.config(command = self.listbox.yview)
-            scrollbar.pack(side="right", fill="y")
-            testframe.pack(side="bottom")
+            for b in range(0, len(labels)):
+                labels[b].bind("<Button-3>", lambda event, bound_b=b: dark_fns.delete_card(self, name, labels[bound_b].cget("text")))
 
             self.clickonce = clickonce + 1
         else:
-            self.listbox.delete(0, tk.END)
-
-            for x in tempdeck:
-                self.listbox.insert(tk.END, x)
             for a in range(len(labels)):
-                 self.labels[a].config(text="")
+                self.labels[a].config(text="")
             for y,z in zip(tempdeck, range(len(labels))):
-                 self.labels[z].config(text=y)
+                self.labels[z].config(text=y)
 
-
-    def find_window_populate_delete(self, event, name, labels):
-        widget = event.widget
-        cs = widget.curselection()
-        for i in cs:
-            #print(labels[i].cget("text").split())
-            if name == labels[i].cget("text").split()[0]:
-                dark_fns.delete_card(name, labels[i].cget("text"))
-                self.listbox.delete(i)
+            for c in range(0, len(labels)): 
+                labels[c].bind("<Button-3>", lambda event, bound_c=c: dark_fns.delete_card(self, name, labels[bound_c].cget("text")))
+                #self.labels = list(map(lambda a: labels.config(text=y), range(0, len(labels)))) 
+        
+        for i in range(0, len(labels)):
+            self.labels[i].pack(side="top")
+        
+        #minor problem, when you re-list a deck, it only shows as many cards as the previous.
 
     def correct_or_not(self, i, review_deck):
         #print(i)
