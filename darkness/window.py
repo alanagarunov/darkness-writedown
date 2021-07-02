@@ -13,6 +13,7 @@ class Application(tk.Frame):
         tk.Button(self, text="Create Card", command=self.create_card_button_window).grid(column=2, row=0)
         tk.Button(self, text="Create Deck", command=self.create_deck_button_window).grid(column=2, row=1)
         tk.Button(self, text="Find/Edit/Delete Cards", command=self.find_window).grid(column=2, row=2)
+        tk.Button(self, text="Settings", command=self.settings_window).grid(column=2, row=3)
         
 
     def create_widgets(self):
@@ -109,14 +110,39 @@ class Application(tk.Frame):
             self.ans.config(state="normal")
             self.ans.bind('<Return>', lambda x: self.correct_or_not(i, review_deck))
             self.ans.wait_variable(self.var)
-        for i in back_front:
-            # self.labl = tk.Label(self.reviewwindow, text=i[3])
-            # self.labl.pack(side="top")
-            # self.ans = tk.Entry(self.reviewwindow)
-            # self.ans.pack(side="top")
-            self.ans.config(state="normal")
-            self.ans.bind('<Return>', lambda x: self.not_or_correct(i, back_front))
-            self.ans.wait_variable(self.var)
+        if dark_fns.get_backfront():
+            for i in back_front:
+                # self.labl = tk.Label(self.reviewwindow, text=i[3])
+                # self.labl.pack(side="top")
+                # self.ans = tk.Entry(self.reviewwindow)
+                # self.ans.pack(side="top")
+                self.ans.config(state="normal")
+                self.ans.bind('<Return>', lambda x: self.not_or_correct(i, back_front))
+                self.ans.wait_variable(self.var)
+
+    def settings_window(self):
+        self.settingswindow = tk.Toplevel(self)
+        self.settingswindow.geometry("400x200")
+        lapseentry = tk.Entry(self.settingswindow)
+        lapseentry.insert(0, dark_fns.get_current_lapses())
+        lapseentry.pack(side="top")
+
+        check1var = tk.IntVar()
+        check1 = tk.Checkbutton(self.settingswindow, text="Include back-to-front reviews?", variable=check1var, onvalue=1, offvalue=0)
+        check1.pack(side="top")
+
+        print(lapseentry.get())
+        save_button = tk.Button(self.settingswindow, text="Save", command=lambda: self.change_settings(lapseentry.get(), check1var.get()))
+        save_button.pack(side="bottom")
+
+        self.congrats = tk.Label(self.settingswindow, text="")
+        self.congrats.pack(side="bottom")
+
+    def change_settings(self, new_lapse, backfront_option):
+        dark_fns.update_lapses(str(new_lapse))
+        dark_fns.update_backfront(str(backfront_option))
+        self.congrats.config(text="Settings successfully changed.")
+
 
     def find_window(self):
         self.findwindow = tk.Toplevel(self)
@@ -145,7 +171,9 @@ class Application(tk.Frame):
                 self.labels.append(tk.Label(self.findwindow, text=x))
 
             a = 0
-            self.listbox.bind("<Double-1>", lambda event, arg=a: self.find_window_populate_delete(event, name, labels))
+            b = 0
+            self.listbox.bind("<Double-3>", lambda event, arg=a: self.find_window_populate_delete(event, name, labels))
+            self.listbox.bind("<Double-1>", lambda event, arg=b: self.find_window_populate_edit(event, name, labels))
             self.listbox.pack(side="left")
             
             self.listbox.config(yscrollcommand = scrollbar.set)
@@ -173,6 +201,35 @@ class Application(tk.Frame):
             if name == labels[i].cget("text").split()[0]:
                 dark_fns.delete_card(name, labels[i].cget("text"))
                 self.listbox.delete(i)
+
+    def find_window_populate_edit(self, event, name, labels):
+        self.editwindow = tk.Toplevel(self.findwindow)
+        self.editwindow.geometry("350x50")
+        widget = event.widget
+        cs = widget.curselection()
+        sentcard = ""
+
+        self.frontside = tk.Entry(self.editwindow)
+        for i in cs:
+            self.frontside.insert(0, labels[i].cget("text").split()[2])
+            sentcard = labels[i].cget("text")
+        self.frontside.pack(side="top")
+        self.backside = tk.Entry(self.editwindow)
+        for i in cs:
+            self.backside.insert(0, labels[i].cget("text").split()[3])
+            sentcard = labels[i].cget("text")
+        self.backside.pack(side="top")
+
+        self.update_button = tk.Button(self.editwindow, text="Update", command= lambda: self.find_window_populate_edit_exec(name, sentcard, self.frontside.get(), self.backside.get()))
+        self.update_button.pack(side="right", fill="y")
+
+        self.congrats = tk.Label(self.editwindow, text="")
+        self.congrats.pack(side="bottom")
+
+    def find_window_populate_edit_exec(self, name, card, frontside, backside):
+        dark_fns.update_card_contents(name, card, frontside, backside)
+        self.congrats.config(text="Card successfully updated.")
+
 
     def correct_or_not(self, i, review_deck):
         #print(i)
@@ -217,9 +274,10 @@ class Application(tk.Frame):
 #              \ /
 #            hardest    
 #TODO: DONE[make it populate a list of decks], DONE[add deck] and DONE[card button], make it look not like crap.
-#TODO: check review then [DONE]make the reviews
-#TODO: setting options: back to front review option and manual interval setup
-#TODO: [DONE]find/edit/[DONE]delete cards
+#TODO: delete deck button
+#TODO: [kinda already does it?]check review then [DONE]make the reviews
+#TODO: [DONE]setting options: back to front review option and manual interval setup
+#TODO: [DONE]find/[DONE]edit/[DONE]delete cards
 
 
 #ISSUES:

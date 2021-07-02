@@ -1,5 +1,6 @@
 import sqlite3
 import time
+from configparser import ConfigParser
 
 def create_deck(name):
     name = name.replace(" ", "_")
@@ -10,41 +11,48 @@ def create_deck(name):
     print("Table Created")
     conn.commit()
     conn.close()
-    f = open("config.txt", "a")
-    f.write(name + "," + str(0) + "\n")
-    f.close()
+
+    config = ConfigParser()
+    config.read("settings.ini")
+
+    #!!! UNCOMMENT IF RUNNING FOR FIRST TIME
+    #config.add_section("deck_settings")
+    #config.add_section("Lapses")
+    #config.add_section("Back-Front")
+    #config.set("Lapses", "user_lapse", "7200,14400,43200,86400,302400,604800,1209600,4838400")
+    #config.set("Back-Front", "user-set", str(1))
+
+    config.set("deck_settings", name, '0')
+    with open("settings.ini", "w") as f:
+        config.write(f)
 
 def update_id(deck_name, id):
-    templst = []
-    f = open("config.txt", "r")
-    templst = f.readlines()
-    for i in range(0,len(templst)):
-        if deck_name in templst[i]:
-            templst[i] = deck_name + "," + str(id+1) + "\n"
-    
-    f = open("config.txt", "w")
-    f.writelines(templst)
-    f.close()
+    config = ConfigParser()
+    config.read("settings.ini")
+    current_id = config.getint("deck_settings", deck_name)
+    current_id = current_id + 1
+    config.set("deck_settings", deck_name, str(current_id))
+    with open("settings.ini", "w") as f:
+        config.write(f)
 
 def get_card_id(deck_name):
-    templst = []
-    templst1 = []
-    f = open("config.txt", "r")
-    for x in f:
-        if deck_name in x:
-            templst.append(str(x))
-    for i in range(0,len(templst)):
-        return templst[i].split(',')[1]
-        #return templst1[1]
+    config = ConfigParser()
+    config.read("settings.ini")
+    current_id = config.getint("deck_settings", deck_name)
+    return current_id
+    
 
 def get_list_of_decks():
     templst = []
     templst1 = []
-    with open("config.txt", "r") as f:
-        templst = f.readlines()
-        for i in range(0,len(templst)):
-            templst1.append(templst[i].split(',')[0])
-        return templst1
+
+    config = ConfigParser()
+    config.read("settings.ini")
+    templst = config.items("deck_settings")
+    for i in templst:
+        templst1.append(i[0])
+    return templst1
+    
 
 #perhaps deckname needs to be apart of cards, otherwise how do i update.
 def create_card(deck_name, card_front, card_back):
@@ -111,16 +119,47 @@ def delete_card(deck_name, card):
     #self.list_button.invoke()
 
 def update_card_contents(deck_name, card, new_frontside, new_backside):
-    tempdeck = get_cards(deck_name)
-    card = card.split(" ")
-    print(card)
-    conn = sqlite3.connect(deck_name+'.db')
-    cursor = conn.cursor()
-    sql = '''UPDATE ''' + deck_name + ''' SET CARD_FRONT = \'''' + str(new_frontside) + '''\', CARD_BACK = \'''' + str(new_backside)+ '''\' WHERE CARD_ID = \'''' + str(card[1]) + '''\''''
-    print(str(card[1]) + "ID Card Updated")
-    cursor.execute(sql)
-    conn.commit()
-    conn.close()
+    try:
+        tempdeck = get_cards(deck_name)
+        card = card.split(" ")
+        print(card)
+        conn = sqlite3.connect(deck_name+'.db')
+        cursor = conn.cursor()
+        sql = '''UPDATE ''' + deck_name + ''' SET CARD_FRONT = \'''' + str(new_frontside) + '''\', CARD_BACK = \'''' + str(new_backside)+ '''\' WHERE CARD_ID = \'''' + str(card[1]) + '''\''''
+        print(str(card[1]) + "ID Card Updated")
+        cursor.execute(sql)
+        conn.commit()
+        conn.close()
+    except sqlite3.Error as error:
+            print("There was a failure. Error: ", error)
+
+def update_lapses(new_lapses):
+    config = ConfigParser()
+    config.read("settings.ini")
+    #updated_lapse = ','.join(new_lapses)
+    config.set("Lapses", "user_lapse", new_lapses)
+    with open("settings.ini", "w") as f:
+        config.write(f)
+
+def get_current_lapses():
+    config = ConfigParser()
+    config.read("settings.ini")
+    review_lapse_str = config.get("Lapses", "user_lapse")
+    return review_lapse_str
+
+def update_backfront(setting):
+    config = ConfigParser()
+    config.read("settings.ini")
+    config.set("Back-Front", "user-set", str(setting))
+    with open("settings.ini", "w") as f:
+        config.write(f)
+
+def get_backfront():
+    config = ConfigParser()
+    config.read("settings.ini")
+    setting = config.get("Back-Front", "user-set")
+    return setting
+
 
 def determine_review(deck_name):
     review_deck = []
@@ -133,27 +172,33 @@ def determine_review(deck_name):
     conn.commit()
     conn.close()
 
+    config = ConfigParser()
+    config.read("settings.ini")
+    review_lapse_str = config.get("Lapses", "user_lapse")
+    review_lapse_list = review_lapse_str.split(',')
+    print(review_lapse_list)
+
     temparr = []
     for x in result:
         #print(x)
         temparr = list(x)
         if int(temparr[5]) == 0:
             review_deck.append(x)
-        elif (int(temparr[5]) == 1 or int(temparr[5]) == 2) and (current_time - int(temparr[4]) >= 7200):
+        elif (int(temparr[5]) == 1 or int(temparr[5]) == 2) and (current_time - int(temparr[4]) >= int(review_lapse_list[0])):
             review_deck.append(x)
-        elif (int(temparr[5]) == 3 or int(temparr[5]) == 4) and (current_time - int(temparr[4]) >= 14400):
+        elif (int(temparr[5]) == 3 or int(temparr[5]) == 4) and (current_time - int(temparr[4]) >= int(review_lapse_list[1])):
             review_deck.append(x)
-        elif (int(temparr[5]) == 5 or int(temparr[5]) == 6) and (current_time - int(temparr[4]) >= 43200):
+        elif (int(temparr[5]) == 5 or int(temparr[5]) == 6) and (current_time - int(temparr[4]) >= int(review_lapse_list[2])):
             review_deck.append(x)
-        elif (int(temparr[5]) == 7 or int(temparr[5]) == 8) and (current_time - int(temparr[4]) >= 86400):
+        elif (int(temparr[5]) == 7 or int(temparr[5]) == 8) and (current_time - int(temparr[4]) >= int(review_lapse_list[3])):
             review_deck.append(x)
-        elif (int(temparr[5]) == 9 or int(temparr[5]) == 10) and (current_time - int(temparr[4]) >= 302400):
+        elif (int(temparr[5]) == 9 or int(temparr[5]) == 10) and (current_time - int(temparr[4]) >= int(review_lapse_list[4])):
             review_deck.append(x)
-        elif (int(temparr[5]) == 11 or int(temparr[5]) == 12) and (current_time - int(temparr[4]) >= 604800):
+        elif (int(temparr[5]) == 11 or int(temparr[5]) == 12) and (current_time - int(temparr[4]) >= int(review_lapse_list[5])):
             review_deck.append(x)
-        elif (int(temparr[5]) == 13 or int(temparr[5]) == 14) and (current_time - int(temparr[4]) >= 1209600):
+        elif (int(temparr[5]) == 13 or int(temparr[5]) == 14) and (current_time - int(temparr[4]) >= int(review_lapse_list[6])):
             review_deck.append(x)
-        elif (int(temparr[5]) == 15 or int(temparr[5]) == 16) and (current_time - int(temparr[4]) >= 4838400):
+        elif (int(temparr[5]) == 15 or int(temparr[5]) == 16) and (current_time - int(temparr[4]) >= int(review_lapse_list[7])):
             review_deck.append(x)
         temparr = []
     return review_deck
