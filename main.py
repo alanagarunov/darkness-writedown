@@ -2,8 +2,8 @@ import darkness.dark_functions as dark_fns
 import darkness.window as dark_window
 
 print("Hello World")
-# dark_fns.create_deck('deck1')
-# dark_fns.create_card('deck1', 'testfront', 'testback')
+#dark_fns.create_deck("a_deck")
+#dark_fns.create_card("a_deck", 'testfront', 'testback')
 # dark_fns.create_card('deck1', '1testfront', '1testback')
 
 # testdeck = dark_fns.determine_review('deck1')
