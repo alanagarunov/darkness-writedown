@@ -1,3 +1,0 @@
-deck1,13
-this_is_a_test,17
-cool_deck,0
