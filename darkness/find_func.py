@@ -12,7 +12,7 @@ def find_window(self):
         self.clickonce = 0
         self.labels = []
 
-        self.list_button = tk.Button(self.findwindow, text="List", command=lambda: self.find_window_populate(self.clicked.get(), self.clickonce, self.labels))
+        self.list_button = tk.Button(self.findwindow, text="List", command=lambda: find_window_populate(self, self.clicked.get(), self.clickonce, self.labels))
         self.list_button.pack(side="left")
 
 def find_window_populate(self, name, clickonce, labels):
@@ -29,8 +29,8 @@ def find_window_populate(self, name, clickonce, labels):
 
             a = 0
             b = 0
-            self.listbox.bind("<Double-3>", lambda event, arg=a: self.find_window_populate_delete(event, name, labels))
-            self.listbox.bind("<Double-1>", lambda event, arg=b: self.find_window_populate_edit(event, name, labels))
+            self.listbox.bind("<Double-3>", lambda event, arg=a: find_window_populate_delete(self, event, name, labels))
+            self.listbox.bind("<Double-1>", lambda event, arg=b: find_window_populate_edit(self, event, name, labels))
             self.listbox.pack(side="left")
             
             self.listbox.config(yscrollcommand = scrollbar.set)
@@ -78,7 +78,7 @@ def find_window_populate_edit(self, event, name, labels):
             sentcard = labels[i].cget("text")
         self.backside.pack(side="top")
 
-        self.update_button = tk.Button(self.editwindow, text="Update", command= lambda: self.find_window_populate_edit_exec(name, sentcard, self.frontside.get(), self.backside.get()))
+        self.update_button = tk.Button(self.editwindow, text="Update", command= lambda: find_window_populate_edit_exec(self, name, sentcard, self.frontside.get(), self.backside.get()))
         self.update_button.pack(side="right", fill="y")
 
         self.congrats = tk.Label(self.editwindow, text="")

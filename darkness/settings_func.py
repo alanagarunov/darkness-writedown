@@ -14,7 +14,7 @@ def settings_window(self):
         check1.pack(side="top")
 
         print(lapseentry.get())
-        save_button = tk.Button(self.settingswindow, text="Save", command=lambda: self.change_settings(lapseentry.get(), check1var.get()))
+        save_button = tk.Button(self.settingswindow, text="Save", command=lambda: change_settings(self, lapseentry.get(), check1var.get()))
         save_button.pack(side="bottom")
 
         self.congrats = tk.Label(self.settingswindow, text="")

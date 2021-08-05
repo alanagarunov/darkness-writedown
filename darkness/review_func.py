@@ -1,4 +1,5 @@
 import tkinter as tk
+from functools import partial
 import darkness.dark_functions as dark_fns
 
 
@@ -29,7 +30,7 @@ def review_window(self, event):
             # self.ans = tk.Entry(self.reviewwindow)
             # self.ans.pack(side="top")
             self.ans.config(state="normal")
-            self.ans.bind('<Return>', lambda x: self.correct_or_not(i, review_deck))
+            self.ans.bind('<Return>',  lambda x: correct_or_not(self, i, review_deck))
             self.ans.wait_variable(self.var)
         if dark_fns.get_backfront():
             for i in back_front:
@@ -38,7 +39,7 @@ def review_window(self, event):
                 # self.ans = tk.Entry(self.reviewwindow)
                 # self.ans.pack(side="top")
                 self.ans.config(state="normal")
-                self.ans.bind('<Return>', lambda x: self.not_or_correct(i, back_front))
+                self.ans.bind('<Return>',  lambda x: not_or_correct(self, i, review_deck))
                 self.ans.wait_variable(self.var)
 
 
